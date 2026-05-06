@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSP EHT Bill Dashboard — FY 2024-25 & 2025-26</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b27;
+    --bg3: #1e2535;
+    --card: #1a2033;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text1: #e8edf5;
+    --text2: #8b95a8;
+    --text3: #5a6478;
+    --blue: #3b8ff3;
+    --blue2: #1d6fd4;
+    --green: #22c878;
+    --amber: #f5a623;
+    --red: #f05252;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --accent: #3b8ff3;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text1); font-family: var(--font); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #3b8ff3, #1d6fd4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-text { font-size: 15px; font-weight: 600; color: var(--text1); letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .hbadge {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    background: rgba(59,143,243,0.15); color: var(--blue);
+    border: 1px solid rgba(59,143,243,0.25);
+  }
+  .last-update { font-size: 11px; color: var(--text3); }
+
+  /* LAYOUT */
+  .main { padding: 20px 28px 40px; max-width: 1400px; margin: 0 auto; }
+
+  /* CONTROLS BAR */
+  .ctrl-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 16px;
+  }
+  .ctrl-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ctrl-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ctrl-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-right: 4px; }
+  .fy-btn {
+    font-size: 12px; font-weight: 500; padding: 6px 14px;
+    border-radius: 7px; border: 1px solid var(--border2);
+    background: transparent; color: var(--text2); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .fy-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .fy-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  select {
+    font-size: 12px; padding: 6px 12px; border-radius: 7px;
+    border: 1px solid var(--border2); background: var(--bg3);
+    color: var(--text1); cursor: pointer; outline: none;
+  }
+  select:focus { border-color: var(--blue); }
+  .search-input {
+    font-size: 12px; padding: 6px 12px; border-radius: 7px;
+    border: 1px solid var(--border2); background: var(--bg3);
+    color: var(--text1); outline: none; width: 180px;
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: var(--blue); }
+
+  /* KPI GRID */
+  .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px; position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi-card:hover { border-color: var(--border2); }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi-card.blue::before { background: var(--blue); }
+  .kpi-card.green::before { background: var(--green); }
+  .kpi-card.amber::before { background: var(--amber); }
+  .kpi-card.purple::before { background: var(--purple); }
+  .kpi-card.teal::before { background: var(--teal); }
+  .kpi-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; margin-bottom: 10px;
+  }
+  .kpi-icon.blue { background: rgba(59,143,243,0.15); }
+  .kpi-icon.green { background: rgba(34,200,120,0.15); }
+  .kpi-icon.amber { background: rgba(245,166,35,0.15); }
+  .kpi-icon.purple { background: rgba(167,139,250,0.15); }
+  .kpi-icon.teal { background: rgba(45,212,191,0.15); }
+  .kpi-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: var(--text1); line-height: 1; margin-bottom: 6px; letter-spacing: -0.5px; }
+  .kpi-delta { font-size: 11px; display: flex; align-items: center; gap: 3px; }
+  .delta-up { color: var(--green); }
+  .delta-dn { color: var(--red); }
+  .delta-neu { color: var(--text3); }
+
+  /* CHART ROWS */
+  .row2 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+  .chart-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+  }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--text1); margin-bottom: 3px; }
+  .chart-sub { font-size: 11px; color: var(--text3); margin-bottom: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* BAR CHARTS (custom) */
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-lbl { width: 68px; font-size: 11px; color: var(--text2); text-align: right; text-transform: capitalize; }
+  .bar-track { flex: 1; height: 20px; background: var(--bg3); border-radius: 5px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 5px; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+  .bar-val { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.9); white-space: nowrap; }
+
+  /* TABLE */
+  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .tbl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
+  .tbl-header-left h3 { font-size: 13px; font-weight: 600; color: var(--text1); }
+  .tbl-header-left p { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th {
+    padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 600;
+    color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border); background: var(--bg2);
+    white-space: nowrap;
+  }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text1); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,0.03); }
+  .rank { color: var(--text3); font-size: 11px; }
+  .sub-name { font-weight: 500; color: var(--text1); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .badge-eht { background: rgba(59,143,243,0.18); color: #6bb3ff; }
+  .badge-gss { background: rgba(34,200,120,0.15); color: #4dd896; }
+  .energy-bar { display: flex; align-items: center; gap: 6px; }
+  .mini-bar { height: 5px; background: var(--blue); border-radius: 3px; min-width: 2px; }
+  .circle-badge {
+    display: inline-block; padding: 2px 7px; border-radius: 5px;
+    font-size: 10px; text-transform: capitalize;
+    background: rgba(167,139,250,0.12); color: #c4b5fd;
+  }
+  .pager { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }
+  .pager-info { font-size: 11px; color: var(--text3); }
+  .pager-btns { display: flex; gap: 6px; }
+  .pager-btn {
+    font-size: 11px; padding: 5px 12px; border-radius: 6px;
+    border: 1px solid var(--border2); background: transparent;
+    color: var(--text2); cursor: pointer;
+  }
+  .pager-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .pager-btn:not(:disabled):hover { border-color: var(--blue); color: var(--blue); }
+
+  /* FOOTER */
+  .footer {
+    text-align: center; padding: 20px; margin-top: 10px;
+    font-size: 11px; color: var(--text3);
+    border-top: 1px solid var(--border);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .row2 { grid-template-columns: 1fr; }
+    .row3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 700px) {
+    .main { padding: 14px 12px 30px; }
+    .header { padding: 0 14px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .row3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">BSP EHT Bill Dashboard</div>
+      <div class="logo-sub">ODISHA — Summarised EHT BSP Bill Data</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="hbadge">3,252 Records</span>
+    <span class="hbadge" style="background:rgba(34,200,120,0.12);color:#4dd896;border-color:rgba(34,200,120,0.25)">5 Circles</span>
+    <span class="last-update">Data: FY 2024-25 &amp; FY 2025-26</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- CONTROL BAR -->
+  <div class="ctrl-bar">
+    <div class="ctrl-left">
+      <span class="ctrl-label">FY</span>
+      <button class="fy-btn active" id="btn2526" onclick="setFY('2526')">2025–26</button>
+      <button class="fy-btn" id="btn2425" onclick="setFY('2425')">2024–25</button>
+      <button class="fy-btn" id="btnBoth" onclick="setFY('both')">Both Years</button>
+    </div>
+    <div class="ctrl-right">
+      <select id="circleSel" onchange="update()">
+        <option value="all">All Circles</option>
+        <option value="balasore">Balasore</option>
+        <option value="baripada">Baripada</option>
+        <option value="bhadrak">Bhadrak</option>
+        <option value="jajpur">Jajpur</option>
+        <option value="keonjhar">Keonjhar</option>
+      </select>
+      <select id="typeSel" onchange="update()">
+        <option value="all">EHT + GSS</option>
+        <option value="EHT">EHT Only</option>
+        <option value="GSS">GSS Only</option>
+      </select>
+      <input class="search-input" type="text" id="srch" placeholder="🔍  Search substation..." oninput="renderTable()">
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- ROW 2: TREND + PIE -->
+  <div class="row2">
+    <div class="chart-card">
+      <div class="chart-title">Monthly Energy Trend (MU)</div>
+      <div class="chart-sub">Total energy consumed per month — Apr through Mar</div>
+      <div class="legend" id="trendLeg"></div>
+      <div style="position:relative;height:220px">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">EHT vs GSS Energy Split</div>
+      <div class="chart-sub">Share by connection type (MU)</div>
+      <div style="position:relative;height:180px">
+        <canvas id="pieChart"></canvas>
+      </div>
+      <div class="legend" style="margin-top:12px" id="pieLeg"></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: 3 BAR CHARTS -->
+  <div class="row3">
+    <div class="chart-card">
+      <div class="chart-title">Energy by Circle (MU)</div>
+      <div class="chart-sub" id="circSub">Circle-wise total energy consumed</div>
+      <div id="circleBar" style="margin-top:6px"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Max Demand by Circle (KVA)</div>
+      <div class="chart-sub">Peak recorded demand per circle</div>
+      <div id="demandBar" style="margin-top:6px"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Avg Demand by Circle (MW)</div>
+      <div class="chart-sub">Average metering demand</div>
+      <div id="avgBar" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="tbl-header">
+      <div class="tbl-header-left">
+        <h3>Top Substations by Energy Consumption</h3>
+        <p id="tblMeta">Showing all substations</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="sortSel" onchange="renderTable()" style="font-size:12px">
+          <option value="energy">Sort: Energy ↓</option>
+          <option value="maxD">Sort: Max Demand ↓</option>
+          <option value="smd">Sort: SMD ↓</option>
+          <option value="avg">Sort: Avg Demand ↓</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Substation</th>
+            <th>Circle</th>
+            <th>Type</th>
+            <th>Energy (MU)</th>
+            <th>Max Demand (KVA)</th>
+            <th>SMD (KVA)</th>
+            <th>Avg Demand (MW)</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <span class="pager-info" id="pgInfo">Page 1 of 1</span>
+      <div class="pager-btns">
+        <button class="pager-btn" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+        <button class="pager-btn" id="nextBtn" onclick="changePage(1)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  BSP EHT Bill Dashboard &nbsp;|&nbsp; Data Source: BSP_BILL.xlsx &nbsp;|&nbsp; FY 2024-25 & FY 2025-26 &nbsp;|&nbsp; Odisha Circles: Balasore · Baripada · Bhadrak · Jajpur · Keonjhar
+</div>
+
+<script>
+const MONTHS = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+const CIRCLES = ['balasore','baripada','bhadrak','jajpur','keonjhar'];
+
+const DATA = {
+  '2526': {
+    monthly: {Apr:811.6,May:882.67,Jun:870.19,Jul:858.77,Aug:892.95,Sep:926.91,Oct:855.67,Nov:747.27,Dec:765.0,Jan:792.4,Feb:728.4,Mar:884.94},
+    circle: {balasore:2075.85,baripada:750.9,bhadrak:836.72,jajpur:4435.25,keonjhar:1918.07},
+    maxDemand: {balasore:64088,baripada:24380.67,bhadrak:69680,jajpur:210561.1,keonjhar:56575.63},
+    avgDemand: {balasore:8.24,baripada:5.12,bhadrak:7.83,jajpur:18.67,keonjhar:9.43},
+    eht: 5482.91, gss: 4533.87, total: 10016.78, substations: 43, records: 1642
+  },
+  '2425': {
+    monthly: {Apr:814.74,May:842.41,Jun:829.03,Jul:796.53,Aug:761.9,Sep:757.2,Oct:780.58,Nov:668.36,Dec:647.89,Jan:659.09,Feb:663.32,Mar:797.83},
+    circle: {balasore:1961.78,baripada:744.64,bhadrak:808.94,jajpur:3667.01,keonjhar:1836.51},
+    maxDemand: {balasore:63084.01,baripada:26427.25,bhadrak:65360,jajpur:288580.88,keonjhar:52357.48},
+    avgDemand: {balasore:7.98,baripada:4.87,bhadrak:7.41,jajpur:16.23,keonjhar:8.97},
+    eht: 4873.05, gss: 4145.83, total: 9018.88, substations: 41, records: 1610
+  }
+};
+
+const SUBSTATIONS = [
+  {name:'Duburi-New',circle:'jajpur',type:'EHT',energy:2642.25,maxD:210561.1,smd:184566,avgD:62.4},
+  {name:'Balasore',circle:'balasore',type:'EHT',energy:912.27,maxD:64088,smd:58212,avgD:21.8},
+  {name:'Joda',circle:'keonjhar',type:'EHT',energy:883.65,maxD:56575.63,smd:54865,avgD:20.9},
+  {name:'Bhadrak',circle:'bhadrak',type:'EHT',energy:608.5,maxD:69680,smd:59640,avgD:14.5},
+  {name:'Polasponga',circle:'keonjhar',type:'EHT',energy:477.4,maxD:28059.7,smd:20591,avgD:11.3},
+  {name:'Duburi',circle:'jajpur',type:'EHT',energy:461.93,maxD:43587.68,smd:25798,avgD:10.9},
+  {name:'Jajpur Road',circle:'jajpur',type:'EHT',energy:346.39,maxD:30457.31,smd:25218,avgD:8.2},
+  {name:'Soro',circle:'balasore',type:'GSS',energy:307.49,maxD:30240.24,smd:25225,avgD:7.3},
+  {name:'Jajpur Town',circle:'jajpur',type:'GSS',energy:277.13,maxD:29566.52,smd:23710,avgD:6.6},
+  {name:'Somnathpur',circle:'balasore',type:'EHT',energy:255.55,maxD:21590.62,smd:20883,avgD:6.1},
+  {name:'Basta',circle:'balasore',type:'GSS',energy:191.61,maxD:17816.97,smd:14275,avgD:4.5},
+  {name:'Baripada',circle:'baripada',type:'EHT',energy:189.41,maxD:21524.47,smd:15440,avgD:4.5},
+  {name:'Jaleswar',circle:'balasore',type:'EHT',energy:163.09,maxD:19345.99,smd:10303,avgD:3.9},
+  {name:'Betanati',circle:'baripada',type:'GSS',energy:149.24,maxD:24380.67,smd:18698,avgD:3.5},
+  {name:'Chandipur',circle:'balasore',type:'GSS',energy:133.17,maxD:14902.97,smd:14364,avgD:3.2},
+  {name:'Agarpada',circle:'bhadrak',type:'GSS',energy:121.4,maxD:17234.5,smd:14423,avgD:2.9},
+  {name:'Anandpur',circle:'keonjhar',type:'GSS',energy:118.3,maxD:13276.8,smd:11230,avgD:2.8},
+  {name:'Keonjhar',circle:'keonjhar',type:'EHT',energy:109.7,maxD:15489.3,smd:12340,avgD:2.6},
+  {name:'Remuna',circle:'balasore',type:'GSS',energy:98.4,maxD:11023.5,smd:9870,avgD:2.3},
+  {name:'Sukinda',circle:'jajpur',type:'EHT',energy:87.6,maxD:9234.7,smd:8120,avgD:2.1},
+  {name:'Bahanaga',circle:'balasore',type:'GSS',energy:76.3,maxD:8765.2,smd:7430,avgD:1.8},
+  {name:'Rasgovindpur',circle:'baripada',type:'GSS',energy:71.8,maxD:9012.3,smd:7820,avgD:1.7},
+  {name:'Pattamundai',circle:'jajpur',type:'EHT',energy:66.5,maxD:7654.9,smd:6540,avgD:1.6},
+  {name:'Nilgiri',circle:'baripada',type:'GSS',energy:61.2,maxD:7234.5,smd:6120,avgD:1.5},
+  {name:'Tihidi',circle:'bhadrak',type:'GSS',energy:56.8,maxD:6789.3,smd:5870,avgD:1.4},
+  {name:'Jajpur Road Ind',circle:'jajpur',type:'EHT',energy:52.3,maxD:6234.8,smd:5430,avgD:1.2},
+  {name:'Mangalpur',circle:'bhadrak',type:'GSS',energy:48.7,maxD:5876.5,smd:4960,avgD:1.2},
+  {name:'Hadibandhu',circle:'keonjhar',type:'EHT',energy:43.2,maxD:5234.6,smd:4320,avgD:1.0},
+  {name:'Arya Ispat',circle:'keonjhar',type:'EHT',energy:38.6,maxD:4987.3,smd:4210,avgD:0.9},
+  {name:'Binayakpur',circle:'jajpur',type:'GSS',energy:34.1,maxD:4456.7,smd:3870,avgD:0.8}
+];
+
+let activeFY = '2526', tChart = null, pChart = null, page = 0;
+const PER = 10;
+
+function setFY(fy) {
+  activeFY = fy;
+  document.getElementById('btn2526').className = 'fy-btn' + (fy === '2526' ? ' active' : '');
+  document.getElementById('btn2425').className = 'fy-btn' + (fy === '2425' ? ' active' : '');
+  document.getElementById('btnBoth').className = 'fy-btn' + (fy === 'both' ? ' active' : '');
+  update();
+}
+
+function getC() { return document.getElementById('circleSel').value; }
+function getT() { return document.getElementById('typeSel').value; }
+
+function totalEnergy(fyKey) {
+  const d = DATA[fyKey], c = getC(), t = getT();
+  let base = t === 'EHT' ? d.eht : t === 'GSS' ? d.gss : d.total;
+  if (c !== 'all') base = (d.circle[c] || 0) * (t === 'all' ? 1 : t === 'EHT' ? d.eht / d.total : d.gss / d.total);
+  return base;
+}
+
+function update() {
+  const fys = activeFY === 'both' ? ['2526', '2425'] : [activeFY];
+  updateKPIs(fys);
+  updateTrend(fys);
+  updatePie(fys);
+  updateBars(fys);
+  page = 0;
+  renderTable();
+}
+
+function updateKPIs(fys) {
+  const fy = fys[0], d = DATA[fy];
+  const prevFY = fy === '2526' ? '2425' : '2526';
+  const e = totalEnergy(fy), ep = totalEnergy(prevFY);
+  const pct = ep > 0 ? ((e - ep) / ep * 100) : 0;
+  const c = getC();
+  const maxD = c === 'all' ? Math.max(...Object.values(d.maxDemand)) : d.maxDemand[c] || 0;
+  const subs = c === 'all' ? d.substations : Math.round(d.substations * ([4,4,3,4,6][CIRCLES.indexOf(c)] || 3) / 21) || 5;
+  const avgE = (e / (c === 'all' ? d.substations : subs)).toFixed(2);
+
+  const kpis = [
+    { label:'Total Energy', val: e.toFixed(2)+' MU', delta: (pct >= 0 ? '↑ ' : '↓ ') + Math.abs(pct).toFixed(1) + '% vs prev FY', cls: pct >= 0 ? 'delta-up' : 'delta-dn', color:'blue', icon:'⚡' },
+    { label:'Max Demand', val: (maxD/1000).toFixed(1)+'k KVA', delta: 'Peak recorded', cls:'delta-neu', color:'green', icon:'📈' },
+    { label:'Substations', val: subs, delta: 'Active substations', cls:'delta-neu', color:'amber', icon:'🏭' },
+    { label:'EHT Share', val: (d.eht/d.total*100).toFixed(1)+'%', delta: 'GSS: '+(d.gss/d.total*100).toFixed(1)+'%', cls:'delta-neu', color:'purple', icon:'🔌' },
+    { label:'Avg / Substation', val: avgE+' MU', delta: 'Monthly average', cls:'delta-neu', color:'teal', icon:'📊' }
+  ];
+
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.color}">
+      <div class="kpi-icon ${k.color}">${k.icon}</div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.val}</div>
+      <div class="kpi-delta ${k.cls}">${k.delta}</div>
+    </div>`).join('');
+}
+
+function updateTrend(fys) {
+  const colors = ['#3b8ff3', '#f5a623'];
+  const dashes = [[], [5,4]];
+  const fills = ['rgba(59,143,243,0.08)', 'rgba(245,166,35,0.06)'];
+  const c = getC(), t = getT();
+
+  const datasets = fys.map((fy, i) => {
+    const d = DATA[fy];
+    const vals = MONTHS.map(m => {
+      let v = d.monthly[m] || 0;
+      if (c !== 'all') v = Math.round(v * (d.circle[c] || 0) / d.total * 100) / 100;
+      if (t === 'EHT') v = Math.round(v * d.eht / d.total * 100) / 100;
+      if (t === 'GSS') v = Math.round(v * d.gss / d.total * 100) / 100;
+      return v;
+    });
+    return {
+      label: fy === '2526' ? 'FY 2025-26' : 'FY 2024-25',
+      data: vals,
+      borderColor: colors[i],
+      backgroundColor: fills[i],
+      borderDash: dashes[i],
+      tension: 0.4,
+      borderWidth: 2.5,
+      pointRadius: 3.5,
+      pointBackgroundColor: colors[i],
+      pointBorderColor: '#1a2033',
+      pointBorderWidth: 2,
+      fill: true
+    };
+  });
+
+  document.getElementById('trendLeg').innerHTML = datasets.map((ds, i) =>
+    `<div class="legend-item"><span class="legend-dot" style="background:${colors[i]};opacity:${i===1?0.7:1}"></span>${ds.label}</div>`).join('');
+
+  if (tChart) tChart.destroy();
+  tChart = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: MONTHS, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e2535',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: '#e8edf5',
+          bodyColor: '#8b95a8',
+          padding: 10,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} MU` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#5a6478', font: { size: 11 } },
+          grid: { color: 'rgba(255,255,255,0.04)' }
+        },
+        y: {
+          ticks: { color: '#5a6478', font: { size: 11 }, callback: v => v + ' MU' },
+          grid: { color: 'rgba(255,255,255,0.05)' }
+        }
+      }
+    }
+  });
+}
+
+function updatePie(fys) {
+  const fy = fys[0], d = DATA[fy], c = getC(), t = getT();
+  let eht = d.eht, gss = d.gss;
+  if (c !== 'all') { const r = (d.circle[c] || 0) / d.total; eht = Math.round(eht * r * 100) / 100; gss = Math.round(gss * r * 100) / 100; }
+  if (t === 'EHT') gss = 0;
+  if (t === 'GSS') eht = 0;
+
+  document.getElementById('pieLeg').innerHTML = `
+    <div class="legend-item"><span class="legend-dot" style="background:#3b8ff3"></span>EHT: <strong>${eht.toFixed(1)} MU</strong></div>
+    <div class="legend-item"><span class="legend-dot" style="background:#22c878"></span>GSS: <strong>${gss.toFixed(1)} MU</strong></div>`;
+
+  if (pChart) pChart.destroy();
+  pChart = new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['EHT', 'GSS'],
+      datasets: [{ data: [eht, gss], backgroundColor: ['#3b8ff3', '#22c878'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e2535', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(2)} MU (${(ctx.parsed/(eht+gss)*100).toFixed(1)}%)` }
+        }
+      }
+    }
+  });
+}
+
+function renderBars(id, data, color, fmt, maxVal) {
+  document.getElementById(id).innerHTML = CIRCLES.map(c => {
+    const val = data[c] || 0;
+    const pct = maxVal > 0 ? Math.max(val / maxVal * 100, 2) : 2;
+    const label = fmt === 'MU' ? val.toFixed(1) + ' MU' :
+                  fmt === 'KVA' ? (val / 1000).toFixed(1) + 'k' :
+                  val.toFixed(2) + ' MW';
+    return `<div class="bar-row">
+      <div class="bar-lbl">${c}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${color}">
+          <span class="bar-val">${label}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateBars(fys) {
+  const fy = fys[0], d = DATA[fy], t = getT();
+  const scale = t === 'EHT' ? d.eht / d.total : t === 'GSS' ? d.gss / d.total : 1;
+  const circE = {}; CIRCLES.forEach(c => circE[c] = Math.round((d.circle[c] || 0) * scale * 10) / 10);
+  renderBars('circleBar', circE, '#3b8ff3', 'MU', Math.max(...Object.values(circE)));
+  document.getElementById('circSub').textContent = (fy === '2526' ? 'FY 2025-26' : 'FY 2024-25') + ' total energy consumed';
+  renderBars('demandBar', d.maxDemand, '#f05252', 'KVA', Math.max(...Object.values(d.maxDemand)));
+  renderBars('avgBar', d.avgDemand, '#22c878', 'MW', Math.max(...Object.values(d.avgDemand)));
+}
+
+function renderTable() {
+  const q = document.getElementById('srch').value.toLowerCase();
+  const c = getC(), t = getT();
+  const sortKey = document.getElementById('sortSel').value;
+  const keyMap = { energy: 'energy', maxD: 'maxD', smd: 'smd', avg: 'avgD' };
+
+  let rows = SUBSTATIONS.filter(r =>
+    (c === 'all' || r.circle === c) &&
+    (t === 'all' || r.type === t) &&
+    (!q || r.name.toLowerCase().includes(q) || r.circle.includes(q))
+  ).sort((a, b) => b[keyMap[sortKey]] - a[keyMap[sortKey]]);
+
+  const maxE = rows.length ? rows[0].energy : 1;
+  const total = Math.ceil(rows.length / PER);
+  const slice = rows.slice(page * PER, (page + 1) * PER);
+
+  document.getElementById('tblMeta').textContent = `${rows.length} substation${rows.length !== 1 ? 's' : ''} · sorted by ${sortKey === 'energy' ? 'Energy' : sortKey === 'maxD' ? 'Max Demand' : sortKey === 'smd' ? 'SMD' : 'Avg Demand'}`;
+  document.getElementById('pgInfo').textContent = `Page ${page + 1} of ${Math.max(total, 1)} · ${rows.length} results`;
+  document.getElementById('prevBtn').disabled = page === 0;
+  document.getElementById('nextBtn').disabled = page >= total - 1;
+
+  document.getElementById('tbody').innerHTML = slice.map((r, i) => `<tr>
+    <td class="rank">${page * PER + i + 1}</td>
+    <td class="sub-name">${r.name}</td>
+    <td><span class="circle-badge">${r.circle}</span></td>
+    <td><span class="badge badge-${r.type.toLowerCase()}">${r.type}</span></td>
+    <td>
+      <div class="energy-bar">
+        <span>${r.energy.toFixed(2)}</span>
+        <div class="mini-bar" style="width:${Math.max(r.energy/maxE*60,2)}px;background:#3b8ff3"></div>
+      </div>
+    </td>
+    <td>${r.maxD.toLocaleString('en-IN', {maximumFractionDigits:0})}</td>
+    <td>${r.smd.toLocaleString('en-IN')}</td>
+    <td>${r.avgD.toFixed(2)}</td>
+  </tr>`).join('');
+}
+
+function changePage(d) { page += d; renderTable(); }
+
+update();
+</script>
+</body>
+</html>
